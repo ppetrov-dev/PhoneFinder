@@ -35,6 +35,7 @@ internal class Startup
         services.AddSingleton<ISmsService, SmsService>();
         services.AddSingleton<IPathService, PathService>();
         services.AddSingleton<ISoundService, SoundService>();
+        services.AddSingleton<IBalanceChecker, BalanceChecker>();
     }
 
     private static void RegisterRepositories(IServiceCollection services)
