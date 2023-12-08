@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Newtonsoft.Json;
 using PhoneFinder.Domain;
 using PhoneFinder.Services;
@@ -26,10 +25,13 @@ internal class GoalPhoneRangeRepository : IGoalPhoneRangeRepository
 
     public bool GetIsOk(PhoneNumber phoneNumber)
     {
-        return Items
-            .Any(
-                range => range.Code == phoneNumber.Code
-                         && range.Begin <= phoneNumber.Number && range.End >= phoneNumber.Number);
+        return Items.Any(
+            range =>
+            {
+                var number = int.Parse(phoneNumber.Number);
+                return range.Code == int.Parse(phoneNumber.Code)
+                       && range.Begin <= number && range.End >= number;
+            });
     }
 
     public IEnumerable<PhoneRange> Items { get; }

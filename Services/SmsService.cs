@@ -38,8 +38,9 @@ internal class SmsService : ISmsService
                 if (parts.Length != 3)
                     return new ServerResult<PhoneNumber>(CreateUnknownError(response));
 
+                var code = parts[1];
                 var number = parts[2];
-                return new ServerResult<PhoneNumber>(new PhoneNumber(Id: parts[1], int.Parse(number[1..4]), int.Parse(number[4..])));
+                return new ServerResult<PhoneNumber>(new PhoneNumber(Id: code, number[1..4], number[4..]));
         }
     }
 

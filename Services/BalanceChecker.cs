@@ -20,6 +20,9 @@ internal class BalanceChecker : IBalanceChecker
     {
         await foreach (var tuple in GetBalancesAsync())
             Console.WriteLine("#{0}-{1}:{2}", tuple.Item1.Id, tuple.Item1.Name, tuple.Item2);
+
+        Console.WriteLine("Нажмите любую клавишу, чтобы продолжить:");
+        Console.ReadKey();
     }
 
     private async IAsyncEnumerable<Tuple<Account, decimal>> GetBalancesAsync()
