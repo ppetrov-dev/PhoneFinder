@@ -1,22 +1,36 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+using Microsoft.Extensions.Logging;
 using PhoneFinder.Domain;
 
 namespace PhoneFinder.Services;
 
 internal class SmsService : ISmsService
 {
+    private ILogger _logger;
     private const string RussianCountryCode = "0";
     private const string GolosZaServiceCode = "js";
 
     public string BaseUrl => "https://365sms.ru";
 
-    public async Task<ServerResult<PhoneNumber>> GetPhoneNumberAsync(Account account)
+    public SmsService(ILoggerFactory loggerFactory)
+    {
+        _logger = loggerFactory.CreateLogger(typeof(SmsService));
+    }
+
+    private async Task<string> GetStringAsync(Uri uri)
     {
         using var client = new HttpClient();
+        var response = await client.GetStringAsync(uri);
+        _logger.LogInformation(@"Received response: {0}", response);
+        return response;
+    }
 
+    public async Task<ServerResult<PhoneNumber>> GetPhoneNumberAsync(Account account)
+    {
         var uriBuilder = CreateBuilder($"?api_key={account.Token}&action=getNumber&service={GolosZaServiceCode}&country={RussianCountryCode}");
 
-        var response = await client.GetStringAsync(uriBuilder.Uri);
+        var response = await GetStringAsync(uriBuilder.Uri);
 
         if (TryHandleCommonErrors(response, out var error))
             return new ServerResult<PhoneNumber>(error);
@@ -46,21 +60,21 @@ internal class SmsService : ISmsService
 
     public async Task<ServerResult<decimal>> GetBalanceAsync(Account account)
     {
-        using var client = new HttpClient();
         var uriBuilder = CreateBuilder($"?api_key={account.Token}&action=getBalance");
-        var response = await client.GetStringAsync(uriBuilder.Uri);
+        var response = await GetStringAsync(uriBuilder.Uri);
 
-        return TryHandleCommonErrors(response, out var error)
-            ? new ServerResult<decimal>(error)
-            : new ServerResult<decimal>(decimal.Parse(response.Split(':')[1]));
+        if (TryHandleCommonErrors(response, out var error))
+            return new ServerResult<decimal>(error);
+
+        var balanceString = response.Split(':')[1];
+        return new ServerResult<decimal>(decimal.Parse(balanceString, CultureInfo.InvariantCulture));
     }
 
     public async Task<ServerResult> RejectAsync(Account account, PhoneNumber phoneNumber)
     {
-        using var client = new HttpClient();
         var uriBuilder = CreateBuilder($"?api_key={account.Token}&action=setStatus&status=8&id={phoneNumber.Id}");
 
-        var response = await client.GetStringAsync(uriBuilder.Uri);
+        var response = await GetStringAsync(uriBuilder.Uri);
 
         if (TryHandleCommonErrors(response, out var error))
             return new ServerResult(error);
@@ -72,9 +86,8 @@ internal class SmsService : ISmsService
 
     public async Task<ServerResult> SuccessAsync(Account account, PhoneNumber phoneNumber)
     {
-        using var client = new HttpClient();
         var uriBuilder = CreateBuilder($"?api_key={account.Token}&action=setStatus&status=6&id={phoneNumber.Id}");
-        var response = await client.GetStringAsync(uriBuilder.Uri);
+        var response = await GetStringAsync(uriBuilder.Uri);
 
         if (TryHandleCommonErrors(response, out var error))
             return new ServerResult(error);
@@ -86,10 +99,9 @@ internal class SmsService : ISmsService
 
     public async Task<ServerResult<string>> GetStatusAsync(Account account, PhoneNumber phoneNumber)
     {
-        using var client = new HttpClient();
         var uriBuilder = CreateBuilder($"?api_key={account.Token}&action=getStatus&id={phoneNumber.Id}");
+        var response = await GetStringAsync(uriBuilder.Uri);
 
-        var response = await client.GetStringAsync(uriBuilder.Uri);
         if (TryHandleCommonErrors(response, out var error))
             return new ServerResult<string>(error);
 
