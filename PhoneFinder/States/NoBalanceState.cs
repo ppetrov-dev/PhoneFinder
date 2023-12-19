@@ -56,7 +56,7 @@ internal class NoBalanceState : StateBase
                 _account.Name);
 
             inputValue = Console.ReadLine();
-        } while (inputValue is "next" or not "ok" and not "exit");
+        } while (inputValue is not "next" and not "ok" and not "exit");
 
         switch (inputValue)
         {
